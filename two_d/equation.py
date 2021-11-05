@@ -45,7 +45,7 @@ class Equation(object):
 
         # Get the metric elements for the local mappings of the elements.
         self.r_x, self.s_x, self.r_y, self.s_y, self.jac = \
-                get_geometric_factors(self.x, self.y, self.d_r, self.d_s)
+            get_geometric_factors(self.x, self.y, self.d_r, self.d_s)
 
         # Get the mask for all faces. The size of the mask is (n + 1) x 3.
         self.f_mask = get_face_mask(self.r, self.s)
@@ -103,11 +103,21 @@ class Equation(object):
         s_y = x_r / jac
         return r_x, s_x, r_y, s_y, jac
 
+    @staticmethod
+    def normals(x, y, d_r, d_s):
+        """Computes outward pointing normals at faces and surface Jacobian."""
+        x_r = np.matmul(d_r, x)
+        x_s = np.matmul(d_s, x)
+        y_r = np.matmul(d_r, y)
+        y_s = np.matmul(d_s, y)
+        jac = -x_s * y_r + x_r * y_s
+
+
     def _get_global_coordinates(self, v, r, s):
         """Computes the global coordinates for all nodes in all elements."""
-        return 0.5 * (-(r + s) * v[self._e_to_v[:, 0]] + \
-                (1.0 + r) * v[self._e_to_v[:, 1]] + \
-                (1.0 + s) * v[self._e_to_v[:, 2]])
+        return 0.5 * (-(r + s) * v[self._e_to_v[:, 0]] +
+                      (1.0 + r) * v[self._e_to_v[:, 1]] +
+                      (1.0 + s) * v[self._e_to_v[:, 2]])
 
     def _lift_fn(self):
         """Computes surface to volume lift term for DG formulation."""
@@ -122,7 +132,7 @@ class Equation(object):
 
         for i in range(3):
             e_mat[f_mask[:, i], i * self.n_fp:(i + 1) * self.n_fp] = \
-                    get_mass_edge(i)
+                get_mass_edge(i)
 
         # inv(mass matrix) * \I_n (L_i, L_j)_{edge_n}.
         return np.matmul(self.v, np.matmul(self.v.transpose(), e_mat))
@@ -142,7 +152,7 @@ class Equation(object):
         v_r = np.matmul(self.d_r, v)
         v_s = np.matmul(self.d_s, v)
         return self.r_x * u_r + self.s_x * u_s + self.r_y * v_r + \
-                self.s_y * v_s
+            self.s_y * v_s
 
     def curl(self, u, v, w=None):
         """Computes the 2D curl operator in the (x, y) plane."""
@@ -153,7 +163,7 @@ class Equation(object):
         omg_x = None
         omg_y = None
         omg_z = self.r_x * v_r + self.s_x * v_s - self.r_y * u_r - \
-                self.s_y * u_s
+            self.s_y * u_s
 
         if w is not None:
             w_r = np.matmul(self.d_r, w)
