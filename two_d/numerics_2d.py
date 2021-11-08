@@ -5,6 +5,9 @@ import numpy as np
 
 from one_d import numerics_1d
 
+# The floating point number data type.
+DTYPE = np.float32
+
 
 def divide_no_nan(a, b):
     """Performs a / b and returns 0 if b is 0."""
@@ -101,7 +104,7 @@ def warp_factor(n, r_out):
     # Scale the warp factor.
     return divide_no_nan(warp, 1.0 - r_out**2)
 
- 
+
 def nodes_2d(n):
     """Computes nodes in equilateral triangle for polynomial order `n`."""
     alpha_opt = [0.0000, 0.0000, 1.4152, 0.1001, 0.2751, 0.9800, 1.0999, \
@@ -114,8 +117,8 @@ def nodes_2d(n):
     n_p = int((n + 1) * (n + 2) / 2)
 
     # Create equidistributed nodes on equilateral triagnle.
-    l_1 = np.zeros((n_p,), dtype=np.float)
-    l_3 = np.zeros((n_p,), dtype=np.float)
+    l_1 = np.zeros((n_p,), dtype=DTYPE)
+    l_3 = np.zeros((n_p,), dtype=DTYPE)
     sk = 0
     for i in range(n + 1):
         for j in range(n + 1 - i):
@@ -161,7 +164,7 @@ def vandermonde_2d(n, r, s):
 
     # Build the Vandermonde matrix.
     n_p = int((n + 1) * (n + 2) / 2)
-    v_2d = np.zeros((len(r), n_p), dtype=np.float)
+    v_2d = np.zeros((len(r), n_p), dtype=DTYPE)
     sk = 0
     for i in range(n + 1):
         for j in range(n + 1 - i):
@@ -174,8 +177,8 @@ def vandermonde_2d(n, r, s):
 def grad_vandermonde_2d(n, r, s):
     """Initializes the gradient of the modal basis at (r, s) at order n."""
     n_p = int((n + 1) * (n + 2) / 2)
-    v_2d_r = np.zeros((len(r), n_p), dtype=np.float)
-    v_2d_s = np.zeros((len(r), n_p), dtype=np.float)
+    v_2d_r = np.zeros((len(r), n_p), dtype=DTYPE)
+    v_2d_s = np.zeros((len(r), n_p), dtype=DTYPE)
 
     # Find the tensor-product coordinates.
     a, b = rs_to_ab(r, s)
@@ -221,5 +224,3 @@ def filter_2d(n, n_c, s, v, inv_v=None):
             sk += 1
 
     return np.matmul(v_f, inv_v)
-
-
