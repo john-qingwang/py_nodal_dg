@@ -1,3 +1,5 @@
+"""A library for 2D equation discretizations with nodal DG."""
+
 import sys
 sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
@@ -8,7 +10,8 @@ from two_d import numerics_2d
 
 # The tolerance for considering a node as a specific type of node.
 NODE_TOL = 1e-6
-
+# The floating point number data type.
+DTYPE = np.float32
 
 class Equation(object):
     """A library of helper variables and functions for 2D DG method."""
@@ -18,8 +21,8 @@ class Equation(object):
 
         Args:
           n: The order of the polynomial.
-          vx: The vortex coordinates in the x direction of length K + 1.
-          vy: The vortex coordinates in the y direction of length K + 1.
+          vx: The vortex coordinates in the x direction.
+          vy: The vortex coordinates in the y direction.
           e_to_v: A K by 3 matrix. Each row of the matrix specifies the
             3 vortices of a triangular element.
         """
@@ -27,6 +30,7 @@ class Equation(object):
         self._n_p = int((n + 1) * (n + 2) / 2)
         self._n_faces = 3
         self._n_fp = n + 1
+        self._k, _ = e_to_v.shape
 
         self._e_to_v = e_to_v
 
@@ -39,19 +43,23 @@ class Equation(object):
         self.y = self._get_global_coordinates(vy, self.r, self.s)
 
         # Get the 2D Vandermonde matrix and the derivative matrix.
-        self.v = vandermonde_2d(n, self.r, self.s)
+        self.v = numerics_2d.vandermonde_2d(n, self.r, self.s)
         self.inv_v = np.linalg.inv(self.v)
-        self.d_r, self.d_s = d_matrices_2d(n, self.r, self.s, self.v)
+        self.d_r, self.d_s = numerics_2d.d_matrices_2d( \
+                n, self.r, self.s, self.v)
 
         # Get the metric elements for the local mappings of the elements.
         self.r_x, self.s_x, self.r_y, self.s_y, self.jac = \
-            get_geometric_factors(self.x, self.y, self.d_r, self.d_s)
+            self.get_geometric_factors(self.x, self.y, self.d_r, self.d_s)
 
         # Get the mask for all faces. The size of the mask is (n + 1) x 3.
-        self.f_mask = get_face_mask(self.r, self.s)
-        f_mask = flatten(self.f_mask)
+        self.f_mask = self.get_face_mask(self.r, self.s)
+        f_mask = self.flatten(self.f_mask)
         self.f_x = self.x[f_mask, :]
         self.f_y = self.y[f_mask, :]
+
+        # Get the outward pointing normals at faces.
+        self.n_x, self.n_y, self.s_j = self._normals()
 
         # Get the lift matrix.
         self.lift = self._lift_fn()
@@ -103,21 +111,53 @@ class Equation(object):
         s_y = x_r / jac
         return r_x, s_x, r_y, s_y, jac
 
-    @staticmethod
-    def normals(x, y, d_r, d_s):
+    def _normals(self):
         """Computes outward pointing normals at faces and surface Jacobian."""
-        x_r = np.matmul(d_r, x)
-        x_s = np.matmul(d_s, x)
-        y_r = np.matmul(d_r, y)
-        y_s = np.matmul(d_s, y)
+        x_r = np.matmul(self.d_r, self.x)
+        x_s = np.matmul(self.d_s, self.x)
+        y_r = np.matmul(self.d_r, self.y)
+        y_s = np.matmul(self.d_s, self.y)
         jac = -x_s * y_r + x_r * y_s
 
+        # Interpolate geometric factors to face nodes.
+        f_mask = self.flatten(self.f_mask)
+        f_xr = x_r[f_mask, :]
+        f_xs = x_s[f_mask, :]
+        f_yr = y_r[f_mask, :]
+        f_ys = y_s[f_mask, :]
+
+        # Build normals.
+        n_x = np.zeros((3 * self._n_fp, self._k), dtype=DTYPE)
+        n_y = np.zeros((3 * self._n_fp, self._k), dtype=DTYPE)
+        f_id1 = np.arange(self._n_fp)
+        f_id2 = np.arange(self._n_fp, int(2 * self._n_fp))
+        f_id3 = np.arange(int(2 * self._n_fp), int(3 * self._n_fp))
+
+        # Face 1.
+        n_x[f_id1, :] = f_yr[f_id1, :]
+        n_y[f_id1, :] = -f_xr[f_id1, :]
+
+        # Face 2.
+        n_x[f_id2, :] = f_ys[f_id2, :] - f_yr[f_id2, :]
+        n_y[f_id2, :] = -f_xs[f_id2, :] + f_xr[f_id2, :]
+
+        # Face 3.
+        n_x[f_id3, :] = -f_ys[f_id3, :]
+        n_y[f_id3, :] = f_xs[f_id3, :]
+
+        # Normalize the normal vectors.
+        s_j = np.sqrt(n_x**2 + n_y**2)
+        n_x /= s_j
+        n_y /= s_j
+
+        return n_x, n_y, s_j
 
     def _get_global_coordinates(self, v, r, s):
         """Computes the global coordinates for all nodes in all elements."""
-        return 0.5 * (-(r + s) * v[self._e_to_v[:, 0]] +
-                      (1.0 + r) * v[self._e_to_v[:, 1]] +
-                      (1.0 + s) * v[self._e_to_v[:, 2]])
+
+        return 0.5 * (-np.outer(r + s, v[self._e_to_v[:, 0]]) + \
+                np.outer(1.0 + r, v[self._e_to_v[:, 1]]) + \
+                np.outer(1.0 + s, v[self._e_to_v[:, 2]]))
 
     def _lift_fn(self):
         """Computes surface to volume lift term for DG formulation."""
@@ -131,8 +171,8 @@ class Equation(object):
             return np.linalg.inv(np.matmul(v_1d, v_1d.transpose()))
 
         for i in range(3):
-            e_mat[f_mask[:, i], i * self.n_fp:(i + 1) * self.n_fp] = \
-                get_mass_edge(i)
+            e_mat[self.f_mask[:, i], i * self.n_fp:(i + 1) * self.n_fp] = \
+                    get_mass_edge(i)
 
         # inv(mass matrix) * \I_n (L_i, L_j)_{edge_n}.
         return np.matmul(self.v, np.matmul(self.v.transpose(), e_mat))
@@ -151,8 +191,7 @@ class Equation(object):
         u_s = np.matmul(self.d_s, u)
         v_r = np.matmul(self.d_r, v)
         v_s = np.matmul(self.d_s, v)
-        return self.r_x * u_r + self.s_x * u_s + self.r_y * v_r + \
-            self.s_y * v_s
+        return self.r_x * u_r + self.s_x * u_s + self.r_y * v_r + self.s_y * v_s
 
     def curl(self, u, v, w=None):
         """Computes the 2D curl operator in the (x, y) plane."""
