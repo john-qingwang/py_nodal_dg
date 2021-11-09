@@ -102,7 +102,12 @@ def warp_factor(n, r_out):
     warp = np.matmul(l_mat.T, r_lgl - r_eq)
 
     # Scale the warp factor.
-    return divide_no_nan(warp, 1.0 - r_out**2)
+    zerof = np.where( \
+            np.abs(r_out) < 1.0 - 1e-10, \
+            np.ones_like(r_out), \
+            np.zeros_like(r_out))
+    sf = 1.0 - (zerof * r_out)**2
+    return divide_no_nan(warp, sf) + warp * (zerof - 1.0)
 
 
 def nodes_2d(n):
@@ -215,12 +220,11 @@ def filter_2d(n, n_c, s, v, inv_v=None):
     sk = 0
     for i in range(n + 1):
         for j in range(n + 1 - i):
-            if i + j < n_c:
-                continue
-            filter_diag = np.exp( \
-                    -alpha * (float(i + j - n_c) / float(n - n_c))**s)
+            if i + j >= n_c:
+                filter_diag = np.exp( \
+                        -alpha * (float(i + j - n_c) / float(n - n_c))**s)
 
-            v_f[:, sk] *= filter_diag
+                v_f[:, sk] *= filter_diag
             sk += 1
 
     return np.matmul(v_f, inv_v)
