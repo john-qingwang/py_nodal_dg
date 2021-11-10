@@ -36,6 +36,7 @@ class Equation(object):
         self._vx = vx
         self._vy = vy
 
+        # Get the connectivity matrices for elements, faces, and nodes.
         self._e_to_v = e_to_v
         self._e_to_e, self._e_to_f = geometry.connect(self._e_to_v)
 
