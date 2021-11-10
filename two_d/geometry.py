@@ -49,4 +49,4 @@ def connect(e_to_v):
         e_to_e[element[i][0], face[i][0]] = int(element[i][1])
         e_to_f[element[i][0], face[i][0]] = int(face[i][1])
 
-    return e_to_e, e_to_f
+    return e_to_e.astype(int), e_to_f.astype(int)

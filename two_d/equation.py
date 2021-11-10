@@ -6,6 +6,7 @@ sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 import numpy as np
 
 from one_d import numerics_1d
+from two_d import geometry
 from two_d import numerics_2d
 
 # The tolerance for considering a node as a specific type of node.
@@ -32,7 +33,11 @@ class Equation(object):
         self._n_fp = n + 1
         self._k, _ = e_to_v.shape
 
+        self._vx = vx
+        self._vy = vy
+
         self._e_to_v = e_to_v
+        self._e_to_e, self._e_to_f = geometry.connect(self._e_to_v)
 
         # Get the local mesh metrics for 1 triangular element.
         x, y = numerics_2d.nodes_2d(n)
@@ -61,6 +66,11 @@ class Equation(object):
         # Get the outward pointing normals at faces.
         self.n_x, self.n_y, self.s_j = self._normals()
 
+        # Get the connectivity and boundary tables in the K number of np
+        # elements.
+        self.v_map_m, self.map_m, self.v_map_p, self.map_p, self.v_map_b, \
+                self.map_b = self._build_map()
+
         # Get the lift matrix.
         self.lift = self._lift_fn()
 
@@ -80,14 +90,16 @@ class Equation(object):
         return self._n_fp
 
     @staticmethod
-    def flatten(u):
-        """Reshapes `u` into a 1D array."""
-        return np.reshape(u, (np.prod(u.shape),))
+    def expand(u, n_0, n_1):
+        """Reshapes `u` into a 2D array following a column first order."""
+        return np.reshape(u, (n_1, n_0)).T
 
     @staticmethod
-    def expand(u, n_0, n_1):
-        """Reshapes `u` into a 2D array."""
-        return np.reshape(u, (n_0, n_1))
+    def flatten(u):
+        """Reshapes `u` into a 1D array, a reverse function of expand."""
+        dims = len(u.shape)
+        return np.reshape( \
+                u.transpose(np.arange(dims)[::-1]), (np.prod(u.shape),))
 
     @staticmethod
     def get_face_mask(r, s):
@@ -151,6 +163,76 @@ class Equation(object):
         n_y /= s_j
 
         return n_x, n_y, s_j
+
+    def _build_map(self):
+        """Constructs connectivity and boundary tables for all elements.
+
+        Returns:
+          v_map_m: The indices of interior face nodes for all faces.
+          map_m: The global indices for nodes in v_map_m.
+          v_map_p: The indices of exterior face nodes for all faces.
+          map_p: The global indices for nodes in v_map_p.
+          v_map_b: The indices of boundary face nodes for all faces.
+          map_b: The global indices for nodes in v_map_b.
+        """
+        node_ids = self.expand( \
+                np.arange(self._k * self._n_p), self._n_p, self._k)
+        v_map_p = np.zeros((self._n_fp, self._n_faces, self._k))
+        map_m = np.arange(self._k * self._n_fp * self._n_faces)
+        map_p = np.reshape( \
+                np.copy(map_m), (self._k, self._n_faces, self._n_fp) \
+                ).transpose(2, 1, 0)
+
+        # Find indices of face nodes wrt volume node ordering.
+        # Get indices corresponds to interior nodes.
+        v_map_m = np.array([ \
+                [node_ids[self.f_mask[:, f], k] for f in range(self._n_faces)] \
+                for k in range(self._k)]).transpose((2, 1, 0))
+
+        x = self.flatten(self.x)
+        y = self.flatten(self.y)
+
+        # Get indices corresponds to exterior nodes.
+        for k1 in range(self._k):
+            for f1 in range(self._n_faces):
+                # Find the neibhoring element and face.
+                k2 = self._e_to_e[k1, f1]
+                f2 = self._e_to_f[k1, f1]
+
+                # Find the reference length of the edge.
+                v1 = self._e_to_v[k1, f1]
+                v2 = self._e_to_v[k1, (f1 + 1) % self._n_faces]
+                d_ref = np.sqrt( \
+                        (self._vx[v1] - self._vx[v2])**2 + \
+                        (self._vy[v1] - self._vy[v2])**2)
+
+                # Find the volume node numbers of left and right nodes.
+                v_id_m = v_map_m[:, f1, k1]
+                v_id_p = v_map_m[:, f2, k2]
+                x1 = np.reshape(x[v_id_m], (len(x[v_id_m]), 1))
+                y1 = np.reshape(y[v_id_m], (len(y[v_id_m]), 1))
+                x2 = np.reshape(x[v_id_p], (1, len(x[v_id_p])))
+                y2 = np.reshape(y[v_id_p], (1, len(y[v_id_p])))
+
+                # Find the distance between each point on face 1 to each point
+                # on face 2.
+                d = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+                # Find the exterior nodes for all interior nodes on the present
+                # face.
+                id_m, id_p = np.where(d < NODE_TOL * d_ref)
+                v_map_p[id_m, f1, k1] = v_id_p[id_p]
+                map_p[id_m, f1, k1] = \
+                        id_p + f2 * self._n_fp + k2 * self._n_faces * self._n_fp
+
+        # Reshape v_map_m and v_map_b to vectors, and create boundary node list.
+        v_map_m = self.flatten(v_map_m)
+        v_map_p = self.flatten(v_map_p)
+        map_p = self.flatten(map_p)
+        map_b = np.squeeze(np.where(v_map_p == v_map_m))
+        v_map_b = v_map_m[map_b]
+
+        return v_map_m, map_m, v_map_p, map_p, v_map_b, map_b
 
     def _get_global_coordinates(self, v, r, s):
         """Computes the global coordinates for all nodes in all elements."""
