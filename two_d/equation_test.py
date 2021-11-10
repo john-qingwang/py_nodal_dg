@@ -85,6 +85,42 @@ class TestEquation(unittest.TestCase):
             np.testing.assert_array_almost_equal( \
                     self.ref['sJ'], self.eq.s_j, decimal=3)
 
+    def test_connectivity_matrices(self):
+        """Checks if the connectivity matrices are build correctly."""
+
+        with self.subTest('EToE'):
+            np.testing.assert_array_equal(self.ref['EToE'], self.eq._e_to_e)
+
+        with self.subTest('EToF'):
+            np.testing.assert_array_equal(self.ref['EToF'], self.eq._e_to_f)
+
+
+    def test_build_map(self):
+        """Checks if maps for face nodes are constructed correctly."""
+        with self.subTest('VMapM'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['vmapM'] - 1), self.eq.v_map_m)
+
+        with self.subTest('MapM'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['mapM'] - 1), self.eq.map_m)
+
+        with self.subTest('VMapP'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['vmapP'] - 1), self.eq.v_map_p)
+
+        with self.subTest('MapP'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['mapP'] - 1), self.eq.map_p)
+
+        with self.subTest('VMapB'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['vmapB'] - 1), self.eq.v_map_b)
+
+        with self.subTest('MapB'):
+            np.testing.assert_array_equal( \
+                    np.squeeze(self.ref['mapB'] - 1), self.eq.map_b)
+
     def test_lift_matrix(self):
         """Checks if the LIFT matrix is computed correctly."""
         np.testing.assert_array_almost_equal( \
