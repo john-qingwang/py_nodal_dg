@@ -10,9 +10,9 @@ from two_d import geometry
 from two_d import numerics_2d
 
 # The tolerance for considering a node as a specific type of node.
-NODE_TOL = 1e-6
+NODE_TOL = 1e-12
 # The floating point number data type.
-DTYPE = np.float32
+DTYPE = np.float64
 
 class Equation(object):
     """A library of helper variables and functions for 2D DG method."""
@@ -48,13 +48,25 @@ class Equation(object):
         self.x = self._get_global_coordinates(vx, self.r, self.s)
         self.y = self._get_global_coordinates(vy, self.r, self.s)
 
-        # Get the 2D Vandermonde matrix and the derivative matrix.
+        # Get the 2D Vandermonde matrix.
         self.v = numerics_2d.vandermonde_2d(n, self.r, self.s)
         self.inv_v = np.linalg.inv(self.v)
+
+        # Compute the mass matrix.
+        self.m = np.matmul(self.inv_v.T, self.inv_v)
+
+        # Compute the derivative matrix in strong form.
         self.d_r, self.d_s = numerics_2d.d_matrices_2d( \
                 n, self.r, self.s, self.v)
 
-        # Get the metric elements for the local mappings of the elements.
+        # Compute weak derivative matrix in weak form.
+        self.v_r, self.v_s = numerics_2d.grad_vandermonde_2d( \
+                self._n, self.r, self.s)
+        inv_v2 = np.linalg.inv(np.matmul(self.v, self.v.T))
+        self.d_rw = np.matmul(np.matmul(self.v, self.v_r.T), inv_v2)
+        self.d_sw = np.matmul(np.matmul(self.v, self.v_s.T), inv_v2)
+
+        # Get geometric factors for the local mappings of the elements.
         self.r_x, self.s_x, self.r_y, self.s_y, self.jac = \
             self.get_geometric_factors(self.x, self.y, self.d_r, self.d_s)
 
@@ -66,13 +78,14 @@ class Equation(object):
 
         # Get the outward pointing normals at faces.
         self.n_x, self.n_y, self.s_j = self._normals()
+        self.f_scale = self.s_j / self.jac[f_mask, :]
 
         # Get the connectivity and boundary tables in the K number of np
         # elements.
         self.v_map_m, self.map_m, self.v_map_p, self.map_p, self.v_map_b, \
                 self.map_b = self._build_map()
 
-        # Get the lift matrix.
+        # Get the lift matrix, i.e. the surface integral term.
         self.lift = self._lift_fn()
 
     @property
