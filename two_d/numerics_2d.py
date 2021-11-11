@@ -5,14 +5,16 @@ import numpy as np
 
 from one_d import numerics_1d
 
+# Tolerance for comparisons with 0.
+TOL = 1e-12
 # The floating point number data type.
-DTYPE = np.float32
+DTYPE = np.float64
 
 
 def divide_no_nan(a, b):
     """Performs a / b and returns 0 if b is 0."""
-    b_new = np.where(b == 0, np.ones_like(b), b)
-    return np.where(b == 0, np.zeros_like(a), a / b_new)
+    b_new = np.where(np.abs(b) < TOL, np.ones_like(b), b)
+    return np.where(np.abs(b) < TOL, np.zeros_like(a), a / b_new)
 
 
 def simplex_2d_p(a, b, i, j):
@@ -42,20 +44,21 @@ def grad_simplex_2d_p(a, b, i, j):
     # Compute the r derivative:
     # d/dr = da /dr d/da + db/dr d/db = (2 / (1 - s)) d/da
     # = (2 / (1 - b)) d/da.
-    buf = d_f_a * g_b
-    d_mode_dr = np.where(i > 0, buf * (0.5 * (1 - b))**max(i - 1, 0), buf)
+    d_mode_dr = d_f_a * g_b
+    if i > 0:
+        d_mode_dr *= (0.5 * (1 - b))**(i - 1)
 
     # Compute the s derivative:
     # d/ds = ((1 + a) / 2) / ((1 - b) / 2) d/da + d/db.
-    buf = d_f_a * (g_b * (0.5 * (1 + a)))
-    d_mode_ds = np.where(i > 0, buf * (0.5 * (1 - b))**max(i - 1, 0), buf)
+    d_mode_ds = d_f_a * (g_b * (0.5 * (1 + a)))
+    if i > 0:
+        d_mode_ds *= (0.5 * (1 - b))**(i - 1)
 
-    buf = d_g_b * ((0.5 * (1 - b))**i)
-    buf = np.where(i > 0, \
-            buf - 0.5 * i * g_b * ((0.5 * (1 - b))**max(i - 1, 0)), \
-            buf)
+    tmp = d_g_b * ((0.5 * (1 - b))**i)
+    if i > 0:
+        tmp -= 0.5 * i * g_b * (0.5 * (1 - b))**(i - 1)
 
-    d_mode_ds += f_a * buf
+    d_mode_ds += f_a * tmp
 
     # Normalize.
     d_mode_dr *= 2**(i + 0.5)
@@ -65,8 +68,10 @@ def grad_simplex_2d_p(a, b, i, j):
 
 def rs_to_ab(r, s):
     """Transfers from (r, s) to (a, b) coordinates in triangle."""
-    a = np.where(s != 1, 2.0 * divide_no_nan(1.0 + r, 1.0 - s) - 1, \
-            -1.0 * np.ones_like(r))
+    a = np.where( \
+            np.abs(s - 1.0) < TOL, \
+            -1.0 * np.ones_like(r), \
+            2.0 * divide_no_nan(1.0 + r, 1.0 - s) - 1)
     b = s
     return a, b
 

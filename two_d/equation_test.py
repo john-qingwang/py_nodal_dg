@@ -94,6 +94,45 @@ class TestEquation(unittest.TestCase):
         with self.subTest('EToF'):
             np.testing.assert_array_equal(self.ref['EToF'], self.eq._e_to_f)
 
+    def test_mass_matrix(self):
+        """Checks if the mass matrix is computed correctly."""
+        with self.subTest('V'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['V'], self.eq.v, decimal=1)
+
+        with self.subTest('InvV'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['invV'], self.eq.inv_v, decimal=2)
+
+        with self.subTest('MassMatrix'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['MassMatrix'], self.eq.m, decimal=3)
+
+    def test_gradient_matrices(self):
+        """Checks if the gradient matrices (strong/weak) are correct."""
+        with self.subTest('Dr'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Dr'], self.eq.d_r, decimal=0)
+
+        with self.subTest('Ds'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Ds'], self.eq.d_s, decimal=0)
+
+        with self.subTest('Vr'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Vr'], self.eq.v_r, decimal=0)
+
+        with self.subTest('Vs'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Vs'], self.eq.v_s, decimal=0)
+
+        with self.subTest('Drw'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Drw'], self.eq.d_rw, decimal=0)
+
+        with self.subTest('Dsw'):
+            np.testing.assert_array_almost_equal( \
+                    self.ref['Dsw'], self.eq.d_sw, decimal=0)
 
     def test_build_map(self):
         """Checks if maps for face nodes are constructed correctly."""
