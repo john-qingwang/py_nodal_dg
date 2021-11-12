@@ -110,6 +110,8 @@ class TestEquation(unittest.TestCase):
 
     def test_gradient_matrices(self):
         """Checks if the gradient matrices (strong/weak) are correct."""
+        # Note that the error is from the discrepancy in r and s, which affected
+        # the computation of the Vandermonde matrix.
         with self.subTest('Dr'):
             np.testing.assert_array_almost_equal( \
                     self.ref['Dr'], self.eq.d_r, decimal=0)
