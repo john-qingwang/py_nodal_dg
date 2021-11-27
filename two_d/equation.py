@@ -14,6 +14,19 @@ NODE_TOL = 1e-12
 # The floating point number data type.
 DTYPE = np.float64
 
+
+class BoundaryCondition(enum.Enum):
+    """Defines the type of boundary condition."""
+    IN = 1
+    OUT = 2
+    WALL = 3
+    FAR = 4
+    CYL = 5
+    DIRICHLET = 6
+    NEUMANN = 7
+    SLIP = 8
+
+
 class Equation(object):
     """A library of helper variables and functions for 2D DG method."""
 
@@ -59,7 +72,7 @@ class Equation(object):
         self.d_r, self.d_s = numerics_2d.d_matrices_2d( \
                 n, self.r, self.s, self.v)
 
-        # Compute weak derivative matrix in weak form.
+        # Compute the derivative matrix in weak form.
         self.v_r, self.v_s = numerics_2d.grad_vandermonde_2d( \
                 self._n, self.r, self.s)
         inv_v2 = np.linalg.inv(np.matmul(self.v, self.v.T))
