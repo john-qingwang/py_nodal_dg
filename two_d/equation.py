@@ -1,5 +1,6 @@
 """A library for 2D equation discretizations with nodal DG."""
 
+import enum
 import sys
 sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
