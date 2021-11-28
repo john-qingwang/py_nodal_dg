@@ -167,6 +167,10 @@ class TestEquation(unittest.TestCase):
         np.testing.assert_array_almost_equal( \
                self.ref['LIFT'], self.eq.lift, decimal=1)
 
+    def test_dt_scale(self):
+        """Checks if dt scale is computed correctly."""
+        np.testing.assert_array_almost_equal( \
+                np.squeeze(self.ref['dtscale']), self.eq.dt_scale())
 
 if __name__ == '__main__':
     unittest.main()

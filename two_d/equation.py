@@ -321,3 +321,22 @@ class Equation(object):
             omg_y = -self.r_x * w_r - self.s_x * w_s
 
         return omg_x, omg_y, omg_z
+
+    def dt_scale(self):
+        """Computes inscribed circle diameter for grid to choose timestep."""
+        # Find vertex nodes.
+        v_mask = self.flatten(np.array([
+                np.where(np.abs(self.s + self.r + 2.0) < NODE_TOL),
+                np.where(np.abs(self.r - 1.0) < NODE_TOL),
+                np.where(np.abs(self.s - 1.0) < NODE_TOL),
+                ]))
+        vx = self.x[v_mask, :]
+        vy = self.y[v_mask, :]
+
+        # Compute semi-perimeter and area.
+        l = np.array([np.sqrt((vx[i, :] - vx[(i + 1) % 3, :])**2 + \
+                (vy[i, :] - vy[(i + 1) % 3, :])**2) for i in range(3)])
+        sper = np.sum(l, 0) / 2.0
+        area = np.sqrt(sper * (sper - l[0]) * (sper - l[1]) * (sper - l[2]))
+
+        return area / sper
