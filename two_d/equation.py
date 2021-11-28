@@ -67,7 +67,7 @@ class Equation(object):
         # Compute the time step size baesd on the mesh grid.
         r_lgl, _ = numerics_1d.jacobi_gq(0, 0, n)
         r_min = np.abs(r_lgl[0] - r_lgl[1])
-        dt = np.min(self.dt_scale()) * r_min * 2.0 / 3.0
+        self.dt = np.min(self.dt_scale()) * r_min * 2.0 / 3.0
 
         # Get the 2D Vandermonde matrix.
         self.v = numerics_2d.vandermonde_2d(n, self.r, self.s)
@@ -113,6 +113,11 @@ class Equation(object):
 
         # Get the lift matrix, i.e. the surface integral term.
         self.lift = self._lift_fn()
+
+    @property
+    def k(self):
+        """Retrieves the number of elements."""
+        return self._k
 
     @property
     def n_p(self):
@@ -272,7 +277,9 @@ class Equation(object):
         map_b = np.squeeze(np.where(v_map_p == v_map_m))
         v_map_b = v_map_m[map_b]
 
-        return v_map_m, map_m, v_map_p, map_p, v_map_b, map_b
+        return v_map_m.astype(np.int32), map_m.astype(np.int32), \
+                v_map_p.astype(np.int32), map_p.astype(np.int32), \
+                v_map_b.astype(np.int32), map_b.astype(np.int32)
 
     def _build_bc_maps(self, bc_type: np.ndarray):
         """Constructs nodal maps for boundary conditions eagerly.
