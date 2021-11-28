@@ -31,7 +31,7 @@ class BoundaryCondition(enum.Enum):
 class Equation(object):
     """A library of helper variables and functions for 2D DG method."""
 
-    def __init__(self, n, vx, vy, e_to_v):
+    def __init__(self, n, vx, vy, e_to_v, bc_type = None):
         """Initializes the 2D equation library.
 
         Args:
@@ -40,6 +40,8 @@ class Equation(object):
           vy: The vortex coordinates in the y direction.
           e_to_v: A K by 3 matrix. Each row of the matrix specifies the
             3 vortices of a triangular element.
+          bc_type: A K x 3 array specifying the boundary condition of each face.
+            Assume all faces are interior if it's not provided.
         """
         self._n = n
         self._n_p = int((n + 1) * (n + 2) / 2)
@@ -98,6 +100,11 @@ class Equation(object):
         # elements.
         self.v_map_m, self.map_m, self.v_map_p, self.map_p, self.v_map_b, \
                 self.map_b = self._build_map()
+
+        # Constructs maps for boundary condition types.
+        bc_type = np.zeros((self._k, 3), dtype=np.int32) if bc_type is None \
+                else bc_type
+        self._build_bc_maps(bc_type)
 
         # Get the lift matrix, i.e. the surface integral term.
         self.lift = self._lift_fn()
@@ -261,6 +268,38 @@ class Equation(object):
         v_map_b = v_map_m[map_b]
 
         return v_map_m, map_m, v_map_p, map_p, v_map_b, map_b
+
+    def _build_bc_maps(self, bc_type: np.ndarray):
+        """Constructs nodal maps for boundary conditions eagerly.
+
+        Args:
+          bc_type: A 3 x K array of integers specifying the boundary condition
+            type of each face.
+        """
+        bct = np.expand_dims(self.flatten(bc_type.T), 0)
+        bnodes = self.flatten(
+                np.matmul(np.ones((self._n_fp, 1), dtype=np.int32), bct))
+
+        self.map_i = np.squeeze(np.where(bnodes == BoundaryCondition.IN.value))
+        self.v_map_i = self.v_map_m[self.map_i]
+        self.map_o = np.squeeze(np.where(bnodes == BoundaryCondition.OUT.value))
+        self.v_map_o = self.v_map_m[self.map_o]
+        self.map_w = np.squeeze(
+                np.where(bnodes == BoundaryCondition.WALL.value))
+        self.v_map_w = self.v_map_m[self.map_w]
+        self.map_f = np.squeeze(np.where(bnodes == BoundaryCondition.FAR.value))
+        self.v_map_f = self.v_map_m[self.map_f]
+        self.map_c = np.squeeze(np.where(bnodes == BoundaryCondition.CYL.value))
+        self.v_map_c = self.v_map_m[self.map_c]
+        self.map_d = np.squeeze(
+                np.where(bnodes == BoundaryCondition.DIRICHLET.value))
+        self.v_map_d = self.v_map_m[self.map_d]
+        self.map_n = np.squeeze(
+                np.where(bnodes == BoundaryCondition.NEUMANN.value))
+        self.v_map_n = self.v_map_m[self.map_n]
+        self.map_s = np.squeeze(
+                np.where(bnodes == BoundaryCondition.SLIP.value))
+        self.v_map_s = self.v_map_m[self.map_s]
 
     def _get_global_coordinates(self, v, r, s):
         """Computes the global coordinates for all nodes in all elements."""

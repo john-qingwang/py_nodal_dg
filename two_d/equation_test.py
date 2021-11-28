@@ -172,5 +172,44 @@ class TestEquation(unittest.TestCase):
         np.testing.assert_array_almost_equal( \
                 np.squeeze(self.ref['dtscale']), self.eq.dt_scale())
 
+    def test_build_bc_maps(self):
+        """Checks if BC maps are built correctly."""
+        bc_type = np.zeros((self.eq._k, 3), dtype=np.int32)
+        for i in range(len(equation.BoundaryCondition)):
+            bc_type[i, :] = i + 1
+        self.eq._build_bc_maps(bc_type)
+
+        with self.subTest(name='MapI'):
+            expected = np.arange(33)
+            np.testing.assert_array_equal(expected, self.eq.map_i)
+
+        with self.subTest(name='MapO'):
+            expected = np.arange(33) + 33
+            np.testing.assert_array_equal(expected, self.eq.map_o)
+
+        with self.subTest(name='MapW'):
+            expected = np.arange(33) + 33 * 2
+            np.testing.assert_array_equal(expected, self.eq.map_w)
+
+        with self.subTest(name='MapF'):
+            expected = np.arange(33) + 33 * 3
+            np.testing.assert_array_equal(expected, self.eq.map_f)
+
+        with self.subTest(name='MapC'):
+            expected = np.arange(33) + 33 * 4
+            np.testing.assert_array_equal(expected, self.eq.map_c)
+
+        with self.subTest(name='MapD'):
+            expected = np.arange(33) + 33 * 5
+            np.testing.assert_array_equal(expected, self.eq.map_d)
+
+        with self.subTest(name='MapN'):
+            expected = np.arange(33) + 33 * 6
+            np.testing.assert_array_equal(expected, self.eq.map_n)
+
+        with self.subTest(name='MapS'):
+            expected = np.arange(33) + 33 * 7
+            np.testing.assert_array_equal(expected, self.eq.map_s)
+
 if __name__ == '__main__':
     unittest.main()
