@@ -6,8 +6,8 @@ sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
 import numpy as np
 
-from one_d import numerics_1d
 from two_d import geometry
+from one_d import numerics_1d
 from two_d import numerics_2d
 
 # The tolerance for considering a node as a specific type of node.
@@ -63,6 +63,11 @@ class Equation(object):
         # Get the global mesh coordinates for all nodes in all elements.
         self.x = self._get_global_coordinates(vx, self.r, self.s)
         self.y = self._get_global_coordinates(vy, self.r, self.s)
+
+        # Compute the time step size baesd on the mesh grid.
+        r_lgl, _ = numerics_1d.jacobi_gq(0, 0, n)
+        r_min = np.abs(r_lgl[0] - r_lgl[1])
+        dt = np.min(self.dt_scale()) * r_min * 2.0 / 3.0
 
         # Get the 2D Vandermonde matrix.
         self.v = numerics_2d.vandermonde_2d(n, self.r, self.s)
