@@ -1,5 +1,6 @@
 """A library for 2D equation discretizations with nodal DG."""
 
+import enum
 import sys
 sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
@@ -13,6 +14,19 @@ from two_d import numerics_2d
 NODE_TOL = 1e-12
 # The floating point number data type.
 DTYPE = np.float64
+
+
+class BoundaryCondition(enum.Enum):
+    """Defines the type of boundary condition."""
+    IN = 1
+    OUT = 2
+    WALL = 3
+    FAR = 4
+    CYL = 5
+    DIRICHLET = 6
+    NEUMANN = 7
+    SLIP = 8
+
 
 class Equation(object):
     """A library of helper variables and functions for 2D DG method."""
@@ -59,7 +73,7 @@ class Equation(object):
         self.d_r, self.d_s = numerics_2d.d_matrices_2d( \
                 n, self.r, self.s, self.v)
 
-        # Compute weak derivative matrix in weak form.
+        # Compute the derivative matrix in weak form.
         self.v_r, self.v_s = numerics_2d.grad_vandermonde_2d( \
                 self._n, self.r, self.s)
         inv_v2 = np.linalg.inv(np.matmul(self.v, self.v.T))
@@ -307,3 +321,22 @@ class Equation(object):
             omg_y = -self.r_x * w_r - self.s_x * w_s
 
         return omg_x, omg_y, omg_z
+
+    def dt_scale(self):
+        """Computes inscribed circle diameter for grid to choose timestep."""
+        # Find vertex nodes.
+        v_mask = self.flatten(np.array([
+                np.where(np.abs(self.s + self.r + 2.0) < NODE_TOL),
+                np.where(np.abs(self.r - 1.0) < NODE_TOL),
+                np.where(np.abs(self.s - 1.0) < NODE_TOL),
+                ]))
+        vx = self.x[v_mask, :]
+        vy = self.y[v_mask, :]
+
+        # Compute semi-perimeter and area.
+        l = np.array([np.sqrt((vx[i, :] - vx[(i + 1) % 3, :])**2 + \
+                (vy[i, :] - vy[(i + 1) % 3, :])**2) for i in range(3)])
+        sper = np.sum(l, 0) / 2.0
+        area = np.sqrt(sper * (sper - l[0]) * (sper - l[1]) * (sper - l[2]))
+
+        return area / sper
