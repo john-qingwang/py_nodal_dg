@@ -40,19 +40,22 @@ def main():
     states_new = maxwell.maxwell_2d_solve(config, states, t_final)
 
     # Show the final results.
-    fig, ax = plt.subplots(1, 3)
-    ax[0].tricontour(
-            config.flatten(config.x),
-            config.flatten(config.y),
-            config.flatten(states_new['Hx']))
-    ax[1].tricontour(
-            config.flatten(config.x),
-            config.flatten(config.y),
-            config.flatten(states_new['Hy']))
-    ax[2].tricontour(
-            config.flatten(config.x),
-            config.flatten(config.y),
-            config.flatten(states_new['Ez']))
+    fig, ax = plt.subplots(1, 3, figsize=(12, 3))
+    i = 0
+    for varname in states_new.keys():
+        minval = np.min(states_new[varname])
+        maxval = np.max(states_new[varname])
+        print('{}: min = {}, max = {}'.format(varname, minval, maxval))
+        ct = ax[i].tricontourf(
+                config.flatten(config.x),
+                config.flatten(config.y),
+                config.flatten(states_new[varname]),
+                levels=np.linspace(minval, maxval, 21),
+                cmap='jet')
+        ax[i].set_aspect('equal', 'box')
+        ax[i].set_title(varname)
+        fig.colorbar(ct, ax=ax[i])
+        i += 1
     plt.show()
 
 
