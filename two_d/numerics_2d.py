@@ -1,3 +1,4 @@
+from collections import namedtuple
 import sys
 sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
@@ -9,7 +10,8 @@ from one_d import numerics_1d
 TOL = 1e-12
 # The floating point number data type.
 DTYPE = np.float64
-
+# Data structure for the cubature rule.
+Cubature = namedtuple('Cubature', ('R', 'S', 'W', 'N'))
 
 def divide_no_nan(a, b):
     """Performs a / b and returns 0 if b is 0."""
@@ -233,3 +235,39 @@ def filter_2d(n, n_c, s, v, inv_v=None):
             sk += 1
 
     return np.matmul(v_f, inv_v)
+
+
+def cubature_2d(c_order):
+    """Provides cubature rules to integrate up to `c_order` polynomial."""
+    data = np.load('data/cubature.npy', allow_pickle=True)[0]
+
+    if c_order <= 28:
+        cub = Cubature(
+                R=data[c_order - 1][:, 0],
+                S=data[c_order - 1][:, 1],
+                W=data[c_order - 1][:, 2],
+                N=len(data[c_order - 1][:, 2]))
+    else:
+        n = int(np.ceil((c_order + 1.0) / 2.0))
+        cub_a, cub_wa = numerics_1d.jacobi_gq(0, 0, n - 1)
+        cub_b, cub_wb = numerics_1d.jacobi_gq(1, 0, n - 1)
+        print(cub_b)
+        print(cub_wb)
+
+        cub_a = np.tile(np.reshape(cub_a, (1, len(cub_a))), (n, 1))
+        cub_b = np.tile(np.reshape(cub_b, (len(cub_b), 1)), (1, n))
+
+        cub_r = 0.5 * (1.0 + cub_a) * (1.0 - cub_b) - 1.0
+        cub_s = cub_b
+        cub_w = 0.5 * np.matmul(
+                np.reshape(cub_wb, (len(cub_wb), 1)),
+                np.reshape(cub_wa, (1, len(cub_wa))))
+
+        n_cub = np.prod(cub_w.shape)
+        cub = Cubature(
+                R=np.reshape(cub_r.T, (n_cub,)),
+                S=np.reshape(cub_s.T, (n_cub,)),
+                W=np.reshape(cub_w.T, (n_cub,)),
+                N=n_cub)
+
+    return cub
