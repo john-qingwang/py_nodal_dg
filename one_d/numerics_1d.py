@@ -3,13 +3,33 @@
 import numpy as np
 import scipy.special as ss
 
+DTYPE = np.float64
+
 
 def jacobi_gq(alpha, beta, n):
     """Computes the n'th order Gauss quadrature points and weights."""
-    p = ss.jacobi(n + 1, alpha, beta)
-    r = np.sort(p.r)
-    i = np.argsort(p.r)
-    w = p.weights[i]
+    if n == 0:
+        r = np.array(-(alpha - beta) / (alpha + beta + 2.0))
+        w = np.array(2.0)
+    else:
+        h1 = 2.0 * np.arange(n + 1) + alpha + beta
+        if alpha + beta < 10 * np.finfo(DTYPE).resolution:
+            d0 = np.zeros((n + 1, n + 1), dtype=DTYPE)
+        else:
+            d0 = np.diag(-0.5 * (alpha**2 - beta**2) / (h1 + 2.0) / h1)
+        j =  d0 + np.diag(2.0 / (h1[:-1] + 2.0) * np.sqrt( \
+                        np.arange(1, n + 1) * \
+                        (np.arange(1, n + 1) + alpha + beta) * \
+                        (np.arange(1, n + 1) + alpha) * \
+                        (np.arange(1, n + 1) + beta) / (h1[:-1] + 1.0) / \
+                        (h1[:-1] + 3.0)), 1)
+        j += j.T
+
+        r, v = np.linalg.eig(j)
+        w = v[0, :].T**2 * np.power(2.0, (alpha + beta + 1)) / \
+            (alpha + beta + 1) * ss.gamma(alpha + 1) * ss.gamma(beta + 1) / \
+            ss.gamma(alpha + beta + 1)
+
     return r, w
 
 
@@ -183,4 +203,3 @@ def slope_limit_lin(u_x, x_l, v_m1, v_0, v_p1):
             minmod(np.array( \
             [u_x[0, :], (v_p1 - v_0) / h, (v_0 - v_m1) / h])), \
             (n_p, 1)))
-
