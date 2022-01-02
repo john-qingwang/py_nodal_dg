@@ -38,15 +38,15 @@ def fluxes_and_primitive_variables(q, gamma):
 def flux_hll(n_x, n_y, q_m, q_p, gamma):
     """Computes Harten-Lax-van Leer surface fluxes."""
     # Rotate "-" trace momentum to face normal-tangent coordinates.
-    rhou_m = q_m[..., 1]
-    rhov_m = q_m[..., 2]
+    rhou_m = np.copy(q_m[..., 1])
+    rhov_m = np.copy(q_m[..., 2])
     e_m = q_m[..., 3]
     q_m[..., 1] = n_x * rhou_m + n_y * rhov_m
     q_m[..., 2] = -n_y * rhou_m + n_x * rhov_m
 
     # Rotate "+" trace momentum to face normal-tangent coordinates.
-    rhou_p = q_p[..., 1]
-    rhov_p = q_p[..., 2]
+    rhou_p = np.copy(q_p[..., 1])
+    rhov_p = np.copy(q_p[..., 2])
     e_p = q_p[..., 3]
     q_p[..., 1] = n_x * rhou_p + n_y * rhov_p
     q_p[..., 2] = -n_y * rhou_p + n_x * rhov_p
@@ -94,7 +94,7 @@ def flux_hll(n_x, n_y, q_m, q_p, gamma):
         t3[..., np.newaxis] * (q_p - q_m)
 
     # Rotate flux back into Cartesian coordinates.
-    flux = f_x
+    flux = np.copy(f_x)
     flux[..., 1] = n_x * f_x[..., 1] - n_y * f_x[..., 2]
     flux[..., 2] = n_y * f_x[..., 1] + n_x * f_x[..., 2]
 
