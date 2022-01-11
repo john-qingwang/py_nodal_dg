@@ -1,7 +1,4 @@
 """A library for solving the 1D linear conservation equation."""
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import numpy as np
 
 from one_d import geometry_1d
@@ -236,4 +233,3 @@ class Equation(object):
                     u_x, self.x[:, ids], vk_m1[ids], vk[ids], vk_p1[ids])
 
         return u_limit
-

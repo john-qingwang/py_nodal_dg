@@ -1,6 +1,4 @@
 from collections import namedtuple
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
 import numpy as np
 

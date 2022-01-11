@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import numpy as np
 
 from one_d import equation
@@ -30,7 +27,7 @@ def advection_rhs(config, states, t, a):
     # Compute right hand sides of the semi-discrete PDE.
     return {'u': -a * config.rx * np.matmul(config.dr, u) + \
             np.matmul(config.lift, config.f_scale * du)}
-    
+
 
 def advection_solve(config, states, a, t_final):
     """Solves the 1D advection equation."""

@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import numpy as np
 
 from one_d import equation
@@ -42,7 +39,7 @@ def maxwell_1d_rhs(config, states, t, eps, mu):
             np.matmul(config.lift, config.f_scale * flux_e)) / eps
     rhs_h = (-config.rx * np.matmul(config.dr, states['E']) + \
             np.matmul(config.lift, config.f_scale * flux_h)) / mu
-    
+
     return {'E': rhs_e, 'H': rhs_h}
 
 
@@ -63,5 +60,3 @@ def maxwell_1d_solve(config, states, t_final, eps, mu):
                 maxwell_1d_rhs, states, config, t, dt, eps=eps, mu=mu)
 
     return states
-
-
