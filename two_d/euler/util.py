@@ -1,7 +1,4 @@
 """A library of utility functions for the 2D Euler equation."""
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import numpy as np
 
 from two_d import numerics_2d

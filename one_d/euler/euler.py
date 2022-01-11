@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import numpy as np
 
 from one_d import time_lib
@@ -143,7 +140,7 @@ def euler_rhs(config, states, time_local, dt):
     return {'rho': rhs_fn(rho_f, d_rho_f), \
             'rhou': rhs_fn(rhou_f, d_rhou_f), \
             'E': rhs_fn(e_f, d_e_f)}
-    
+
 
 def euler_solve(config, states, t_final):
     """Solves the 1D Euler equation."""

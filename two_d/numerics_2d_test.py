@@ -1,7 +1,4 @@
 """Tests the 2D numerics library."""
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import unittest
 
 import numpy as np
@@ -20,7 +17,7 @@ class TestNumerics2D(unittest.TestCase):
         """Initializes common variables for the test."""
         super().setUp()
 
-        self.ref = sp_io.loadmat('./test_data/numerics_2d_ref.mat')
+        self.ref = sp_io.loadmat('two_d/test_data/numerics_2d_ref.mat')
 
     def test_numerical_operators(self):
         """Checks results from numerics_2d."""

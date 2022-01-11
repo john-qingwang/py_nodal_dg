@@ -1,7 +1,4 @@
 """Test the Equation library for 2D nodal DG discretization."""
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import unittest
 
 import numpy as np
@@ -21,8 +18,8 @@ class TestEquation(unittest.TestCase):
         """Initializes common variables for the test."""
         super().setUp()
 
-        mesh = sp_io.loadmat('./test_data/maxwell.mat')
-        self.ref = sp_io.loadmat('./test_data/maxwell_ref.mat')
+        mesh = sp_io.loadmat('two_d/test_data/maxwell.mat')
+        self.ref = sp_io.loadmat('two_d/test_data/maxwell_ref.mat')
         self.eq = equation.Equation( \
                 int(mesh['N']),
                 np.squeeze(mesh['VX']),

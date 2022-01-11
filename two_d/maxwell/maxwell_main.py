@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sp_io
@@ -15,7 +12,7 @@ def main():
     n = 10
 
     # Read the mesh.
-    mesh = sp_io.loadmat('../test_data/maxwell.mat')
+    mesh = sp_io.loadmat('two_d/test_data/maxwell.mat')
 
     # Initialize solver and construct grid and metric.
     config = equation.Equation( \

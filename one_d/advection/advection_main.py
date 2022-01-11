@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
-
 import matplotlib.pyplot as plt
 import numpy as np
 

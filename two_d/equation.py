@@ -1,8 +1,6 @@
 """A library for 2D equation discretizations with nodal DG."""
 
 import enum
-import sys
-sys.path.insert(1, '/Users/qingwang/Documents/research/nodal-dg')
 
 import numpy as np
 
@@ -133,6 +131,26 @@ class Equation(object):
     def n_fp(self):
         """Retrieves the number of face points."""
         return self._n_fp
+
+    @property
+    def e_to_e(self):
+        """Retrives the element to element mapping."""
+        return self._e_to_e
+
+    @property
+    def e_to_v(self):
+        """Retrives the element to vertex mapping."""
+        return self._e_to_v
+
+    @property
+    def v_x(self):
+        """Retrives the x coordinates of the vertices."""
+        return self._v_x
+
+    @property
+    def v_y(self):
+        """Retrives the y coordinates of the vertices."""
+        return self._v_y
 
     @staticmethod
     def expand(u, n_0, n_1):

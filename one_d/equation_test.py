@@ -1,7 +1,7 @@
 import numpy as np
 
-import equation
-import mesh_gen_1d
+from one_d import equation
+from one_d import mesh_gen_1d
 
 if __name__ == '__main__':
     n = 8
