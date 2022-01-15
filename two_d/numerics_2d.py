@@ -237,7 +237,7 @@ def filter_2d(n, n_c, s, v, inv_v=None):
 
 def cubature_2d(c_order):
     """Provides cubature rules to integrate up to `c_order` polynomial."""
-    data = np.load('data/cubature.npy', allow_pickle=True)[0]
+    data = np.load('two_d/data/cubature.npy', allow_pickle=True)[0]
 
     if c_order <= 28:
         cub = Cubature(
