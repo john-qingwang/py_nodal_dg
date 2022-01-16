@@ -96,3 +96,38 @@ def flux_hll(n_x, n_y, q_m, q_p, gamma):
     flux[..., 2] = n_y * f_x[..., 1] + n_x * f_x[..., 2]
 
     return flux
+
+
+def limiter(config, q, bc, time):
+    """Limits the slope of the Euler solution."""
+    # Gas constant.
+    gamma = 1.4
+
+    # 1. Compute geometric information for 4 element patch ocntaining each
+    # element.
+    # Build the average matrix.
+    ave = 0.5 * np.sum(config.m, axis=0)
+
+    # Compute displacements from center of nodes for Taylor expansion of limited
+    # fields.
+    drop_ave = np.eye(config.n_p) - np.tile(ave, (config.n_p, 1))
+    dx = np.matmul(drop_ave, config.x)
+    dy = np.matmul(drop_ave, config.y)
+
+    # Find neighbors in patch.
+    e1 = config.e_to_e[:, 0]
+    e2 = config.e_to_e[:, 1]
+    e3 = config.e_to_e[:, 2]
+
+    # Extract coordinates of vertices and centers of elements.
+    v1 = self.e_to_v[:, 0]
+    x_v1 = config.v_x[v1]
+    y_v1 = config.v_y[v1]
+    v2 = self.e_to_v[:, 1]
+    x_v2 = config.v_x[v2]
+    y_v2 = config.v_y[v2]
+    v3 = self.e_to_v[:, 2]
+    x_v3 = config.v_x[v3]
+    y_v3 = config.v_y[v3]
+
+    # Compute face unit normals and lengths.
