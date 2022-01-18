@@ -1,10 +1,10 @@
 """A library for 2D equation discretizations with nodal DG."""
 
-import enum
+from jax import jacfwd
 
 import numpy as np
 
-from two_d import geometry
+from two_d import boudnary_condition, geometry
 from one_d import numerics_1d
 from two_d import numerics_2d
 
@@ -13,17 +13,7 @@ NODE_TOL = 1e-12
 # The floating point number data type.
 DTYPE = np.float64
 
-
-class BoundaryCondition(enum.Enum):
-    """Defines the type of boundary condition."""
-    IN = 1
-    OUT = 2
-    WALL = 3
-    FAR = 4
-    CYL = 5
-    DIRICHLET = 6
-    NEUMANN = 7
-    SLIP = 8
+BoundaryCondition = boudnary_condition.BoundaryCondition
 
 
 class Equation(object):
@@ -105,9 +95,9 @@ class Equation(object):
                 self.map_b = self._build_map()
 
         # Constructs maps for boundary condition types.
-        bc_type = np.zeros((self._k, 3), dtype=np.int32) if bc_type is None \
+        self.bc_type = np.zeros((self._k, 3), dtype=np.int32) if bc_type is None \
                 else bc_type
-        self._build_bc_maps(bc_type)
+        self._build_bc_maps(self.bc_type)
 
         # Get the lift matrix, i.e. the surface integral term.
         self.lift = self._lift_fn()
